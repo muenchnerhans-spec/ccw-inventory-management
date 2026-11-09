@@ -257,7 +257,7 @@ export default {
       totalRevenue: '総売上',
       avgMonthlyRevenue: '月平均売上',
       totalOrders: '総注文数',
-      bestQuarter: '最も好調な四半期'
+      bestQuarter: '売上が最も高い四半期'
     }
   },
 

@@ -29,14 +29,14 @@
             </thead>
             <tbody>
               <tr v-for="q in quarterlyData" :key="q.quarter">
-                <td><strong>{{ q.quarter }}</strong></td>
+                <td>
+                  <strong>{{ q.quarter }}</strong>
+                </td>
                 <td>{{ q.total_orders }}</td>
                 <td>{{ formatMoney(q.total_revenue) }}</td>
                 <td>{{ formatMoney(q.avg_order_value) }}</td>
                 <td>
-                  <span :class="getFulfillmentClass(q.fulfillment_rate)">
-                    {{ q.fulfillment_rate }}%
-                  </span>
+                  <span :class="getFulfillmentClass(q.fulfillment_rate)"> {{ q.fulfillment_rate }}% </span>
                 </td>
               </tr>
             </tbody>
@@ -50,16 +50,44 @@
           <h3 class="card-title">{{ t('reports.monthlyTrend.title') }}</h3>
         </div>
         <div class="chart-container">
-          <div class="bar-chart">
-            <div v-for="row in monthlyRows" :key="row.month" class="bar-wrapper">
-              <div class="bar-container">
+          <div v-if="monthlyRows.length === 0" class="loading">
+            {{ t('common.noData') }}
+          </div>
+          <div v-else class="chart-layout">
+            <div class="y-axis" aria-hidden="true">
+              <span v-for="tick in yTicks" :key="tick.value" class="y-tick" :style="{ bottom: tick.offset + 'px' }">{{
+                tick.label
+              }}</span>
+            </div>
+            <div class="chart-plot">
+              <div class="gridlines" aria-hidden="true">
                 <div
-                  class="bar"
-                  :style="{ height: row.barHeight + 'px' }"
-                  :title="formatMoney(row.revenue)"
+                  v-for="tick in yTicks"
+                  :key="tick.value"
+                  class="gridline"
+                  :style="{ bottom: tick.offset + 'px' }"
                 ></div>
               </div>
-              <div class="bar-label">{{ row.label }}</div>
+              <ul class="bar-chart" role="list" :aria-label="t('reports.monthlyTrend.title')">
+                <li
+                  v-for="row in monthlyRows"
+                  :key="row.month"
+                  class="bar-wrapper"
+                  role="listitem"
+                  :aria-label="row.label + ': ' + formatMoney(row.revenue)"
+                >
+                  <div class="bar-container">
+                    <div
+                      class="bar"
+                      :style="{ height: row.barHeight + 'px' }"
+                      :title="row.label + ': ' + formatMoney(row.revenue)"
+                    ></div>
+                  </div>
+                  <div class="bar-label" aria-hidden="true">
+                    {{ row.label }}
+                  </div>
+                </li>
+              </ul>
             </div>
           </div>
         </div>
@@ -83,7 +111,9 @@
             </thead>
             <tbody>
               <tr v-for="row in monthlyRows" :key="row.month">
-                <td><strong>{{ row.label }}</strong></td>
+                <td>
+                  <strong>{{ row.label }}</strong>
+                </td>
                 <td>{{ row.order_count }}</td>
                 <td>{{ formatMoney(row.revenue) }}</td>
                 <td>
@@ -111,7 +141,9 @@
           <div class="stat-value">{{ formatMoney(totalRevenue) }}</div>
         </div>
         <div class="stat-card">
-          <div class="stat-label">{{ t('reports.summary.avgMonthlyRevenue') }}</div>
+          <div class="stat-label">
+            {{ t('reports.summary.avgMonthlyRevenue') }}
+          </div>
           <div class="stat-value">{{ formatMoney(avgMonthlyRevenue) }}</div>
         </div>
         <div class="stat-card">
@@ -132,7 +164,7 @@ import { ref, computed, watch, onMounted } from 'vue'
 import { api } from '../api'
 import { useFilters } from '../composables/useFilters'
 import { useI18n } from '../composables/useI18n'
-import { formatCurrencyWithDecimals } from '../utils/currency'
+import { formatCurrencyWithDecimals, convertAmount } from '../utils/currency'
 
 const MONTH_KEYS = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec']
 const CHART_MAX_HEIGHT = 200
@@ -141,13 +173,7 @@ export default {
   name: 'Reports',
   setup() {
     const { t, currentCurrency } = useI18n()
-    const {
-      selectedPeriod,
-      selectedLocation,
-      selectedCategory,
-      selectedStatus,
-      getCurrentFilters
-    } = useFilters()
+    const { selectedPeriod, selectedLocation, selectedCategory, selectedStatus, getCurrentFilters } = useFilters()
 
     const loading = ref(true)
     const error = ref(null)
@@ -203,9 +229,35 @@ export default {
     }
 
     // Derived data
-    const maxRevenue = computed(() =>
-      monthlyData.value.reduce((max, m) => Math.max(max, m.revenue), 0)
-    )
+    const maxRevenue = computed(() => monthlyData.value.reduce((max, m) => Math.max(max, m.revenue), 0))
+
+    // Round the chart ceiling up to a "nice" value so the four y-axis intervals fall on
+    // readable numbers without leaving much empty space above the tallest bar.
+    const axisMax = computed(() => {
+      if (maxRevenue.value <= 0) return 0
+      const magnitude = Math.pow(10, Math.floor(Math.log10(maxRevenue.value)))
+      const step = [1, 1.2, 1.6, 2, 2.4, 3, 4, 5, 6, 8, 10].find((s) => s * magnitude >= maxRevenue.value)
+      return step * magnitude
+    })
+
+    const formatCompactMoney = (amount) => {
+      const isYen = currentCurrency.value === 'JPY'
+      return new Intl.NumberFormat(isYen ? 'ja-JP' : 'en-US', {
+        style: 'currency',
+        currency: isYen ? 'JPY' : 'USD',
+        notation: 'compact',
+        maximumFractionDigits: 1
+      }).format(convertAmount(amount, currentCurrency.value))
+    }
+
+    const yTicks = computed(() => {
+      if (axisMax.value === 0) return []
+      return [0, 0.25, 0.5, 0.75, 1].map((fraction) => ({
+        value: fraction * axisMax.value,
+        label: formatCompactMoney(fraction * axisMax.value),
+        offset: fraction * CHART_MAX_HEIGHT
+      }))
+    })
 
     const monthlyRows = computed(() =>
       monthlyData.value.map((m, index) => {
@@ -213,24 +265,20 @@ export default {
         return {
           ...m,
           label: formatMonth(m.month),
-          barHeight: maxRevenue.value === 0 ? 0 : (m.revenue / maxRevenue.value) * CHART_MAX_HEIGHT,
+          barHeight: axisMax.value === 0 ? 0 : (m.revenue / axisMax.value) * CHART_MAX_HEIGHT,
           change: previous ? m.revenue - previous.revenue : null,
           growthRate: previous ? formatGrowthRate(m.revenue, previous.revenue) : null
         }
       })
     )
 
-    const totalRevenue = computed(() =>
-      monthlyData.value.reduce((sum, m) => sum + m.revenue, 0)
-    )
+    const totalRevenue = computed(() => monthlyData.value.reduce((sum, m) => sum + m.revenue, 0))
 
     const avgMonthlyRevenue = computed(() =>
       monthlyData.value.length > 0 ? totalRevenue.value / monthlyData.value.length : 0
     )
 
-    const totalOrders = computed(() =>
-      monthlyData.value.reduce((sum, m) => sum + m.order_count, 0)
-    )
+    const totalOrders = computed(() => monthlyData.value.reduce((sum, m) => sum + m.order_count, 0))
 
     const bestQuarter = computed(() => {
       let best = null
@@ -259,6 +307,7 @@ export default {
       quarterlyData,
       monthlyData,
       monthlyRows,
+      yTicks,
       totalRevenue,
       avgMonthlyRevenue,
       totalOrders,
@@ -324,12 +373,59 @@ export default {
   min-height: 300px;
 }
 
+.chart-layout {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.y-axis {
+  position: relative;
+  height: 200px;
+  width: 4.5rem;
+  flex-shrink: 0;
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+.y-tick {
+  position: absolute;
+  right: 0;
+  transform: translateY(50%);
+  white-space: nowrap;
+}
+
+.chart-plot {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+}
+
+.gridlines {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 200px;
+  pointer-events: none;
+}
+
+.gridline {
+  position: absolute;
+  left: 0;
+  right: 0;
+  border-top: 1px solid #e2e8f0;
+}
+
 .bar-chart {
+  position: relative;
   display: flex;
   align-items: flex-end;
   justify-content: space-around;
   height: 250px;
   gap: 0.5rem;
+  list-style: none;
+  padding: 0;
+  margin: 0;
 }
 
 .bar-wrapper {
@@ -352,7 +448,6 @@ export default {
   background: linear-gradient(to top, #3b82f6, #60a5fa);
   border-radius: 4px 4px 0 0;
   transition: all 0.3s;
-  cursor: pointer;
 }
 
 .bar:hover {
@@ -371,9 +466,21 @@ export default {
 
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  grid-template-columns: repeat(4, 1fr);
   gap: 1rem;
   margin-top: 1.5rem;
+}
+
+@media (max-width: 1100px) {
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .stat-card {

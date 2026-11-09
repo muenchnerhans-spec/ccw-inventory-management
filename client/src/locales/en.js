@@ -257,7 +257,7 @@ export default {
       totalRevenue: 'Total Revenue',
       avgMonthlyRevenue: 'Avg Monthly Revenue',
       totalOrders: 'Total Orders',
-      bestQuarter: 'Best Performing Quarter'
+      bestQuarter: 'Highest Revenue Quarter'
     }
   },
 

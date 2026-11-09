@@ -91,7 +91,7 @@ export const api = {
     if (filters.status && filters.status !== 'all') params.append('status', filters.status)
     if (filters.month && filters.month !== 'all') params.append('month', filters.month)
 
-    const response = await axios.get(`${API_BASE_URL}/reports/quarterly?${params.toString()}`)
+    const response = await axios.get(`${API_BASE_URL}/reports/quarterly`, { params })
     return response.data
   },
 
@@ -102,7 +102,7 @@ export const api = {
     if (filters.status && filters.status !== 'all') params.append('status', filters.status)
     if (filters.month && filters.month !== 'all') params.append('month', filters.month)
 
-    const response = await axios.get(`${API_BASE_URL}/reports/monthly-trends?${params.toString()}`)
+    const response = await axios.get(`${API_BASE_URL}/reports/monthly-trends`, { params })
     return response.data
   },
 
