@@ -98,6 +98,45 @@ export default {
       totalValue: '総価値',
       location: '場所',
       status: 'ステータス'
+    },
+    restocking: {
+      title: '予算ベースの補充',
+      description: '予算を入力すると、優先的に再注文すべき品目と各注文のコストが表示されます。',
+      budgetLabel: '予算',
+      budgetPlaceholder: '例: 5000',
+      calculate: '計算',
+      calculating: '計算中...',
+      invalidBudget: '0以上の予算を入力してください。',
+      loadError: '補充提案の計算に失敗しました: ',
+      noCandidates: '現在のフィルターでは補充が必要な品目はありません。',
+      summary: {
+        budget: '予算',
+        totalCost: '予定支出',
+        remaining: '残り予算',
+        funded: '全量発注',
+        partial: '一部発注',
+        unfunded: '予算不足'
+      },
+      table: {
+        priority: '優先度',
+        onHand: '手持在庫数',
+        needed: '必要数',
+        order: '発注数',
+        lineCost: 'コスト',
+        demand: '需要トレンド',
+        status: '結果'
+      },
+      status: {
+        full: '全量',
+        partial: '一部',
+        unfunded: '対象外'
+      },
+      trend: {
+        increasing: '増加',
+        stable: '安定',
+        decreasing: '減少',
+        none: '予測なし'
+      }
     }
   },
 

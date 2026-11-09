@@ -98,6 +98,45 @@ export default {
       totalValue: 'Total Value',
       location: 'Location',
       status: 'Status'
+    },
+    restocking: {
+      title: 'Budget-Based Restocking',
+      description: 'Enter a budget to see which items to reorder first and how much each order costs.',
+      budgetLabel: 'Budget',
+      budgetPlaceholder: 'e.g. 5000',
+      calculate: 'Calculate',
+      calculating: 'Calculating...',
+      invalidBudget: 'Enter a budget of 0 or more.',
+      loadError: 'Failed to calculate restocking recommendation: ',
+      noCandidates: 'No items need restocking for the current filters.',
+      summary: {
+        budget: 'Budget',
+        totalCost: 'Planned Spend',
+        remaining: 'Remaining Budget',
+        funded: 'Fully Funded',
+        partial: 'Partially Funded',
+        unfunded: 'Not Funded'
+      },
+      table: {
+        priority: 'Priority',
+        onHand: 'On Hand',
+        needed: 'Needed',
+        order: 'Order Qty',
+        lineCost: 'Cost',
+        demand: 'Demand Trend',
+        status: 'Result'
+      },
+      status: {
+        full: 'Full',
+        partial: 'Partial',
+        unfunded: 'Not funded'
+      },
+      trend: {
+        increasing: 'Increasing',
+        stable: 'Stable',
+        decreasing: 'Decreasing',
+        none: 'No forecast'
+      }
     }
   },
 

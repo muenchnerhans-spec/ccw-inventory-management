@@ -1,4 +1,6 @@
-from fastapi import FastAPI, HTTPException
+import math
+
+from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from typing import List, Optional
 from pydantic import BaseModel
@@ -45,6 +47,90 @@ def apply_filters(items: list, warehouse: Optional[str] = None, category: Option
         filtered = [item for item in filtered if item.get('status', '').lower() == status.lower()]
 
     return filtered
+
+# Restocking: items up to 1.5x reorder point are candidates (same band as the
+# "low stock" and "adequate" statuses in the Inventory view); each is topped up to 2x reorder point.
+RESTOCK_CANDIDATE_FACTOR = 1.5
+RESTOCK_TARGET_FACTOR = 2
+
+def build_restocking_recommendation(items: list, forecasts: list, budget: float) -> dict:
+    """Pick restocking quantities by priority until the budget is used up.
+
+    Priority score = urgency * demand factor. Urgency is the share of the target level that is
+    missing. The demand factor is forecasted/current demand (at least 1.0) when a forecast exists
+    for the SKU, otherwise 1.0. Items are funded greedily; an item that does not fit is skipped so
+    cheaper, lower-priority items can still be funded.
+    """
+    forecast_by_sku = {f['item_sku']: f for f in forecasts}
+
+    candidates = []
+    for item in items:
+        reorder_point = item['reorder_point']
+        on_hand = item['quantity_on_hand']
+        if reorder_point <= 0 or on_hand > reorder_point * RESTOCK_CANDIDATE_FACTOR:
+            continue
+
+        target = reorder_point * RESTOCK_TARGET_FACTOR
+        needed_qty = target - on_hand
+        if needed_qty <= 0:
+            continue
+
+        forecast = forecast_by_sku.get(item['sku'])
+        demand_factor = 1.0
+        if forecast and forecast['current_demand'] > 0:
+            demand_factor = max(forecast['forecasted_demand'] / forecast['current_demand'], 1.0)
+
+        candidates.append({
+            'item': item,
+            'needed_qty': needed_qty,
+            'score': ((target - on_hand) / target) * demand_factor,
+            'demand_trend': forecast['trend'] if forecast else None,
+        })
+
+    candidates.sort(key=lambda c: (-c['score'], c['item']['sku']))
+
+    remaining = float(budget)
+    lines = []
+    for c in candidates:
+        item = c['item']
+        unit_cost = item['unit_cost']
+        needed_qty = c['needed_qty']
+
+        if needed_qty * unit_cost <= remaining + 1e-9:
+            qty, status = needed_qty, 'full'
+        else:
+            qty = math.floor(remaining / unit_cost + 1e-9) if unit_cost > 0 else 0
+            status = 'partial' if qty >= 1 else 'unfunded'
+            qty = qty if qty >= 1 else 0
+
+        line_cost = round(qty * unit_cost, 2)
+        remaining = round(remaining - line_cost, 2)
+        lines.append({
+            'sku': item['sku'],
+            'name': item['name'],
+            'category': item['category'],
+            'warehouse': item['warehouse'],
+            'quantity_on_hand': item['quantity_on_hand'],
+            'reorder_point': item['reorder_point'],
+            'unit_cost': unit_cost,
+            'needed_qty': needed_qty,
+            'recommended_qty': qty,
+            'line_cost': line_cost,
+            'priority_score': round(c['score'], 4),
+            'status': status,
+            'demand_trend': c['demand_trend'],
+        })
+
+    total_cost = round(sum(line['line_cost'] for line in lines), 2)
+    return {
+        'budget': budget,
+        'total_cost': total_cost,
+        'remaining_budget': round(budget - total_cost, 2),
+        'full_count': sum(1 for line in lines if line['status'] == 'full'),
+        'partial_count': sum(1 for line in lines if line['status'] == 'partial'),
+        'unfunded_count': sum(1 for line in lines if line['status'] == 'unfunded'),
+        'items': lines,
+    }
 
 # CORS middleware
 app.add_middleware(
@@ -119,6 +205,30 @@ class CreatePurchaseOrderRequest(BaseModel):
     unit_cost: float
     expected_delivery_date: str
     notes: Optional[str] = None
+
+class RestockingLine(BaseModel):
+    sku: str
+    name: str
+    category: str
+    warehouse: str
+    quantity_on_hand: int
+    reorder_point: int
+    unit_cost: float
+    needed_qty: int
+    recommended_qty: int
+    line_cost: float
+    priority_score: float
+    status: str  # 'full' | 'partial' | 'unfunded'
+    demand_trend: Optional[str] = None
+
+class RestockingRecommendation(BaseModel):
+    budget: float
+    total_cost: float
+    remaining_budget: float
+    full_count: int
+    partial_count: int
+    unfunded_count: int
+    items: List[RestockingLine]
 
 # API endpoints
 @app.get("/")
@@ -206,6 +316,16 @@ def get_dashboard_summary(
         "total_backlog_items": total_backlog_items,
         "total_orders_value": sum(order["total_value"] for order in filtered_orders)
     }
+
+@app.get("/api/restocking/recommendations", response_model=RestockingRecommendation)
+def get_restocking_recommendations(
+    budget: float = Query(..., ge=0, allow_inf_nan=False),
+    warehouse: Optional[str] = None,
+    category: Optional[str] = None
+):
+    """Recommend restocking quantities that fit within the given budget"""
+    filtered_inventory = apply_filters(inventory_items, warehouse, category)
+    return build_restocking_recommendation(filtered_inventory, demand_forecasts, budget)
 
 @app.get("/api/spending/summary")
 def get_spending_summary():
