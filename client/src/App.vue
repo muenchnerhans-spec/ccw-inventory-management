@@ -23,7 +23,7 @@
             {{ t('nav.demandForecast') }}
           </router-link>
           <router-link to="/reports" :class="{ active: $route.path === '/reports' }">
-            Reports
+            {{ t('nav.reports') }}
           </router-link>
         </nav>
         <LanguageSwitcher />
@@ -216,6 +216,7 @@ body {
 }
 
 .logo h1 {
+  white-space: nowrap;
   font-size: 1.375rem;
   font-weight: 700;
   color: #0f172a;
@@ -236,6 +237,7 @@ body {
 }
 
 .nav-tabs a {
+  white-space: nowrap;
   padding: 0.625rem 1.25rem;
   color: #64748b;
   text-decoration: none;
@@ -264,6 +266,37 @@ body {
   right: 0;
   height: 2px;
   background: #2563eb;
+}
+
+@media (max-width: 1400px) {
+  .subtitle {
+    display: none;
+  }
+
+  .nav-tabs a {
+    padding: 0.625rem 0.75rem;
+  }
+}
+
+@media (max-width: 1100px) {
+  .nav-container {
+    flex-wrap: wrap;
+    height: auto;
+    min-height: 70px;
+    padding: 0.5rem 1rem;
+    row-gap: 0.25rem;
+  }
+
+  .nav-container > .nav-tabs {
+    order: 3;
+    flex-basis: 100%;
+    margin: 0;
+    overflow-x: auto;
+  }
+
+  .nav-container > .language-switcher {
+    margin-left: auto;
+  }
 }
 
 .main-content {

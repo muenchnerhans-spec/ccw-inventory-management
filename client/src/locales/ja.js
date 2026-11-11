@@ -6,6 +6,7 @@ export default {
     orders: '注文',
     finance: '財務',
     demandForecast: '需要予測',
+    reports: 'レポート',
     companyName: '触媒コンポーネンツ',
     subtitle: '在庫管理システム'
   },
@@ -98,6 +99,45 @@ export default {
       totalValue: '総価値',
       location: '場所',
       status: 'ステータス'
+    },
+    restocking: {
+      title: '予算ベースの補充',
+      description: '予算を入力すると、優先的に再注文すべき品目と各注文のコストが表示されます。',
+      budgetLabel: '予算',
+      budgetPlaceholder: '例: 5000',
+      calculate: '計算',
+      calculating: '計算中...',
+      invalidBudget: '0以上の予算を入力してください。',
+      loadError: '補充提案の計算に失敗しました: ',
+      noCandidates: '現在のフィルターでは補充が必要な品目はありません。',
+      summary: {
+        budget: '予算',
+        totalCost: '予定支出',
+        remaining: '残り予算',
+        funded: '全量発注',
+        partial: '一部発注',
+        unfunded: '予算不足'
+      },
+      table: {
+        priority: '優先度',
+        onHand: '手持在庫数',
+        needed: '必要数',
+        order: '発注数',
+        lineCost: 'コスト',
+        demand: '需要トレンド',
+        status: '結果'
+      },
+      status: {
+        full: '全量',
+        partial: '一部',
+        unfunded: '対象外'
+      },
+      trend: {
+        increasing: '増加',
+        stable: '安定',
+        decreasing: '減少',
+        none: '予測なし'
+      }
     }
   },
 
@@ -185,6 +225,39 @@ export default {
       change: '変化',
       trend: 'トレンド',
       period: '期間'
+    }
+  },
+
+  // Reports
+  reports: {
+    title: '業績レポート',
+    description: '四半期ごとの業績指標と月次トレンドを表示します',
+    loading: 'レポートを読み込み中...',
+    loadError: 'レポートの読み込みに失敗しました: {message}',
+    quarterly: {
+      title: '四半期業績',
+      quarter: '四半期',
+      totalOrders: '総注文数',
+      totalRevenue: '総売上',
+      avgOrderValue: '平均注文額',
+      fulfillmentRate: '出荷完了率'
+    },
+    monthlyTrend: {
+      title: '月次売上トレンド'
+    },
+    monthOverMonth: {
+      title: '前月比分析',
+      month: '月',
+      orders: '注文数',
+      revenue: '売上',
+      change: '増減',
+      growthRate: '成長率'
+    },
+    summary: {
+      totalRevenue: '総売上',
+      avgMonthlyRevenue: '月平均売上',
+      totalOrders: '総注文数',
+      bestQuarter: '売上が最も高い四半期'
     }
   },
 

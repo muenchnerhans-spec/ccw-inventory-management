@@ -6,6 +6,7 @@ export default {
     orders: 'Orders',
     finance: 'Finance',
     demandForecast: 'Demand Forecast',
+    reports: 'Reports',
     companyName: 'Catalyst Components',
     subtitle: 'Inventory Management System'
   },
@@ -98,6 +99,45 @@ export default {
       totalValue: 'Total Value',
       location: 'Location',
       status: 'Status'
+    },
+    restocking: {
+      title: 'Budget-Based Restocking',
+      description: 'Enter a budget to see which items to reorder first and how much each order costs.',
+      budgetLabel: 'Budget',
+      budgetPlaceholder: 'e.g. 5000',
+      calculate: 'Calculate',
+      calculating: 'Calculating...',
+      invalidBudget: 'Enter a budget of 0 or more.',
+      loadError: 'Failed to calculate restocking recommendation: ',
+      noCandidates: 'No items need restocking for the current filters.',
+      summary: {
+        budget: 'Budget',
+        totalCost: 'Planned Spend',
+        remaining: 'Remaining Budget',
+        funded: 'Fully Funded',
+        partial: 'Partially Funded',
+        unfunded: 'Not Funded'
+      },
+      table: {
+        priority: 'Priority',
+        onHand: 'On Hand',
+        needed: 'Needed',
+        order: 'Order Qty',
+        lineCost: 'Cost',
+        demand: 'Demand Trend',
+        status: 'Result'
+      },
+      status: {
+        full: 'Full',
+        partial: 'Partial',
+        unfunded: 'Not funded'
+      },
+      trend: {
+        increasing: 'Increasing',
+        stable: 'Stable',
+        decreasing: 'Decreasing',
+        none: 'No forecast'
+      }
     }
   },
 
@@ -185,6 +225,39 @@ export default {
       change: 'Change',
       trend: 'Trend',
       period: 'Period'
+    }
+  },
+
+  // Reports
+  reports: {
+    title: 'Performance Reports',
+    description: 'View quarterly performance metrics and monthly trends',
+    loading: 'Loading reports...',
+    loadError: 'Failed to load reports: {message}',
+    quarterly: {
+      title: 'Quarterly Performance',
+      quarter: 'Quarter',
+      totalOrders: 'Total Orders',
+      totalRevenue: 'Total Revenue',
+      avgOrderValue: 'Avg Order Value',
+      fulfillmentRate: 'Fulfillment Rate'
+    },
+    monthlyTrend: {
+      title: 'Monthly Revenue Trend'
+    },
+    monthOverMonth: {
+      title: 'Month-over-Month Analysis',
+      month: 'Month',
+      orders: 'Orders',
+      revenue: 'Revenue',
+      change: 'Change',
+      growthRate: 'Growth Rate'
+    },
+    summary: {
+      totalRevenue: 'Total Revenue',
+      avgMonthlyRevenue: 'Avg Monthly Revenue',
+      totalOrders: 'Total Orders',
+      bestQuarter: 'Highest Revenue Quarter'
     }
   },
 
